@@ -9,7 +9,7 @@ from collections import defaultdict
 
 
 try:
-    # Arkadaşının hazırladığı IBMModel2 sınıfını miras alıyoruz
+   
     from IBM_model_1and2 import IBMModel2 
 except ImportError:
     print("Hata: 'IBM_model_1and2.py' bulunamadı. Lütfen dosyanın IBM_1-2 klasöründe olduğundan emin olun.")
@@ -69,7 +69,7 @@ if __name__ == "__main__":
         acq_pre = importlib.import_module("acquisition-preprocessing")
         train_data = acq_pre.train_data
         
-        # Modeli başlat ve eğit
+        
         model = IBMModel3(train_data[:2000]) # Test için küçük veri
         model.train(iterations=2)            # Önce Model 2 eğitimi
         model.train_model3(iterations=2)     # Senin Model 3 eğitimin
