@@ -223,6 +223,71 @@ def train(model, iterator, optimizer, criterion, clip):
         
     return epoch_loss / len(iterator)
 
+
+import evaluate
+import nltk
+try:
+    nltk.data.find("wordnet")
+except LookupError:
+    nltk.download("wordnet")
+
+def evaluate_model(model, iterator, src_vocab, trg_vocab, max_len=20):
+    model.eval()
+    metric_bleu = evaluate.load("sacrebleu")
+    metric_meteor = evaluate.load("meteor")
+    metric_bert = evaluate.load("bertscore")
+    
+    hypotheses = []
+    references = []
+    
+    with torch.no_grad():
+        for i, (src, trg) in enumerate(iterator):
+            src = src.to(DEVICE)
+            trg = trg.to(DEVICE)
+            
+            # Greedy generation for GRU Seq2Seq
+            batch_size = src.shape[0]
+            # Encoder
+            hidden = model.encoder(src)
+            # Decoder
+            input = torch.tensor([trg_vocab.word2index["<SOS>"]], device=DEVICE).repeat(batch_size)
+            
+            # Store predictions
+            predictions = torch.zeros(batch_size, max_len).to(DEVICE)
+            
+            for t in range(max_len):
+                # Decoder forward step
+                output, hidden = model.decoder(input, hidden)
+                top1 = output.argmax(1)
+                predictions[:, t] = top1
+                input = top1 # Next input is current prediction
+            
+            # Convert indices to words
+            pred_indices = predictions.cpu().numpy()
+            trg_indices = trg.cpu().numpy()
+            
+            for j in range(batch_size):
+                pred_words = [trg_vocab.index2word[int(idx)] for idx in pred_indices[j] if int(idx) not in [0, 1, 2]]
+                trg_words = [trg_vocab.index2word[int(idx)] for idx in trg_indices[j] if int(idx) not in [0, 1, 2]]
+                
+                hypotheses.append(" ".join(pred_words))
+                references.append([" ".join(trg_words)])
+            
+            if len(hypotheses) > 100: break
+
+    print("Computing metrics...")
+    result_bleu = metric_bleu.compute(predictions=hypotheses, references=references)
+    try:
+        result_meteor = metric_meteor.compute(predictions=hypotheses, references=references)
+    except:
+        result_meteor = {"meteor": 0.0} # Fallback if nltk issue
+        
+    result_bert = metric_bert.compute(predictions=hypotheses, references=[r[0] for r in references], lang="tr")
+    
+    print(f"BLEU: {result_bleu['score']:.2f}")
+    print(f"METEOR: {result_meteor['meteor']:.4f}")
+    print(f"BERTScore F1: {np.mean(result_bert['f1']):.4f}")
+
 def main():
     print(f"Loading dataset from {DATASET_PATH}...")
     try:
@@ -275,6 +340,10 @@ def main():
     # Model kaydetme (opsiyonel)
     torch.save(model.state_dict(), 'gru_seq2seq_model.pt')
     print("Model saved!")
+    
+    print("Evaluating Model...")
+    evaluate_model(model, dataloader, src_vocab, trg_vocab)
+
 
 if __name__ == "__main__":
     main()
