@@ -11,8 +11,8 @@ print(">>> Step 1: Downloading and extracting Tatoeba (English-Turkish) dataset.
 
 # Download dataset directly from source to avoid library dependency issues
 if not os.path.exists("tatoeba_en_tr.zip"):
-    !wget -q -O tatoeba_en_tr.zip https://object.pouta.csc.fi/OPUS-Tatoeba/v2023-04-12/moses/en-tr.txt.zip
-    !unzip -o tatoeba_en_tr.zip
+    pass #!wget -q -O tatoeba_en_tr.zip https://object.pouta.csc.fi/OPUS-Tatoeba/v2023-04-12/moses/en-tr.txt.zip
+    #!unzip -o tatoeba_en_tr.zip
 
 # Load data into memory
 dataset = []

@@ -1,4 +1,6 @@
 # --- STEP 3: DEFINING IBM MODELS ---
+import string
+from collections import defaultdict
 
 class IBMModel2:
     def __init__(self, data):
